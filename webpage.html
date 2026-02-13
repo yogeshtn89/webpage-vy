@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dam Safety Problem</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        section {
+            margin: 20px auto;
+            padding: 25px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            max-width: 900px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h2 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .diagram-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            filter: drop-shadow(0 5px 15px rgba(102, 126, 234, 0.2));
+        }
+
+        #damSvg {
+            background: linear-gradient(135deg, #e8f0f7 0%, #f5f9ff 100%);
+            border-radius: 10px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                filter: drop-shadow(0 5px 15px rgba(102, 126, 234, 0.2));
+            }
+            50% {
+                filter: drop-shadow(0 10px 25px rgba(102, 126, 234, 0.4));
+            }
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .input-group {
+            margin: 15px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f9ff 0%, #e8f0f7 100%);
+            border-left: 5px solid #667eea;
+            border-radius: 10px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .input-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .input-field label {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 0.9em;
+        }
+
+        .input-field input {
+            padding: 12px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background-color: white;
+        }
+
+        .input-field input:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 10px rgba(118, 75, 162, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .input-field input:hover {
+            border-color: #764ba2;
+        }
+
+        .output-value {
+            font-weight: bold;
+            color: #667eea;
+            animation: fadeIn 0.5s ease;
+            display: inline-block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .safe {
+            color: #10b981;
+            font-weight: bold;
+            animation: pulse-safe 0.8s ease-in-out;
+        }
+
+        @keyframes pulse-safe {
+            0%, 100% {
+                text-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+            50% {
+                text-shadow: 0 0 15px rgba(16, 185, 129, 0.8);
+            }
+        }
+
+        .unsafe {
+            color: #ef4444;
+            font-weight: bold;
+            animation: pulse-unsafe 0.8s ease-in-out;
+        }
+
+        @keyframes pulse-unsafe {
+            0%, 100% {
+                text-shadow: 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+            50% {
+                text-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
+            }
+        }
+
+        p {
+            line-height: 1.8;
+            margin: 12px 0;
+        }
+
+        ul {
+            list-style-position: inside;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        #calculateBtn {
+            transition: all 0.3s ease !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #calculateBtn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        #calculateBtn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .animation-controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .animation-controls button {
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #startBtn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        #startBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        #startBtn:active {
+            transform: translateY(0);
+        }
+
+        #stopBtn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        #stopBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        #stopBtn:active {
+            transform: translateY(0);
+        }
+
+        .diagram-paused {
+            animation-play-state: paused !important;
+        }
+
+        .diagram-paused * {
+            animation-play-state: paused !important;
+        }
+
+        @keyframes waterWave {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes waterRipple {
+            0% { 
+                opacity: 1;
+                r: 5px;
+            }
+            100% { 
+                opacity: 0;
+                r: 40px;
+            }
+        }
+
+        @keyframes damCrack {
+            0%, 100% { 
+                stroke-dashoffset: 0;
+                filter: drop-shadow(0 0 0px rgba(239, 68, 68, 0));
+            }
+            50% { 
+                stroke-dashoffset: 100;
+                filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.8));
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes waterFlow {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(20px); }
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Structural Safety of Dam</h1>
+    </header>
+
+    <section>
+        <h2>Problem Statement</h2>
+        <p>Figure shows the cross-section of a dam subjected to a force system. For safe design, the resultant of the force system must pass through the middle third of its base. Check whether the dam is safe or not.</p>
+    </section>
+
+    <section>
+        <h2>Input Parameters</h2>
+        <div class="input-group">
+            <div class="input-field">
+                <label for="f1">Vertical Force (kN):</label>
+                <input type="number" id="f1" value="80" step="5">
+            </div>
+            <div class="input-field">
+                <label for="f2">Horizontal Force (kN):</label>
+                <input type="number" id="f2" value="220" step="5">
+            </div>
+            <div class="input-field">
+                <label for="f3">Third Force (kN):</label>
+                <input type="number" id="f3" value="50" step="5">
+            </div>
+            <div class="input-field">
+                <label for="angle">Third Force Angle (°):</label>
+                <input type="number" id="angle" value="30" step="1">
+            </div>
+            <div class="input-field">
+                <label for="height">Dam Height (m):</label>
+                <input type="number" id="height" value="5" step="0.5">
+            </div>
+            <div class="input-field">
+                <label for="base">Dam Base (m):</label>
+                <input type="number" id="base" value="9" step="0.5">
+            </div>
+            <div class="input-field" style="justify-content: flex-end;">
+                <button id="calculateBtn" style="padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                    📊 Calculate
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Dam Diagram with Forces</h2>
+        <div class="diagram-container">
+            <svg id="damSvg" width="700" height="520" style="border: 2px solid #667eea; background: linear-gradient(180deg, #e0e7ff 0%, #f0f4ff 100%); border-radius: 10px;"></svg>
+            <div class="animation-controls">
+                <button id="startBtn">▶ Start</button>
+                <button id="stopBtn">⏸ Stop</button>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Force Distribution Graph</h2>
+        <div class="chart-container">
+            <canvas id="forceChart"></canvas>
+        </div>
+    </section>
+        <h2>Calculations & Results</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="padding: 15px; background: linear-gradient(135deg, #f5f9ff 0%, #e8f0f7 100%); border-radius: 10px;">
+                <h3 style="margin-top: 0; color: #667eea;">Force Components</h3>
+                <p>∑Fₓ = <span class="output-value" id="sumFx">36.70</span> kN</p>
+                <p>∑Fᵧ = <span class="output-value" id="sumFy">245</span> kN</p>
+                <p>Resultant R = <span class="output-value" id="resultant">247.73</span> kN</p>
+                <p>θ = <span class="output-value" id="theta">81.4</span>°</p>
+            </div>
+            <div style="padding: 15px; background: linear-gradient(135deg, #f5f9ff 0%, #e8f0f7 100%); border-radius: 10px;">
+                <h3 style="margin-top: 0; color: #667eea;">Moment & Position</h3>
+                <p>Moment ∑M_B = <span class="output-value" id="moment">1070</span> kN·m</p>
+                <p>x-intercept = <span class="output-value" id="xIntercept">4.367</span> m</p>
+                <p>Safe Zone: 3.0 m to 6.0 m</p>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Step-by-Step Solution</h2>
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            
+            <div style="padding: 15px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 5px solid #f59e0b; border-radius: 8px; cursor: pointer;" onclick="toggleStep(this)">
+                <h3 style="margin: 0 0 10px 0; color: #92400e; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: bold; font-size: 1.3em;">❶</span> Identify Given Forces
+                </h3>
+                <div class="step-content" style="display: none;">
+                    <p><strong>Given:</strong></p>
+                    <ul style="margin: 10px 0;">
+                        <li>Vertical Force (F₁) = <span class="output-value" id="step_f1">80</span> kN (downward)</li>
+                        <li>Horizontal Force (F₂) = <span class="output-value" id="step_f2">220</span> kN (to the left)</li>
+                        <li>Third Force (F₃) = <span class="output-value" id="step_f3">50</span> kN at <span class="output-value" id="step_angle">30</span>°</li>
+                        <li>Dam Height = <span class="output-value" id="step_h">5</span> m</li>
+                        <li>Dam Base = <span class="output-value" id="step_b">9</span> m</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="padding: 15px; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-left: 5px solid #0ea5e9; border-radius: 8px; cursor: pointer;" onclick="toggleStep(this)">
+                <h3 style="margin: 0 0 10px 0; color: #0c2d48; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: bold; font-size: 1.3em;">❷</span> Resolve F₃ into Components
+                </h3>
+                <div class="step-content" style="display: none;">
+                    <p><strong>Breaking down the angled force into horizontal and vertical components:</strong></p>
+                    <p style="margin: 10px 0; padding: 10px; background: white; border-radius: 5px; font-family: monospace;">
+                        F₃ₓ = F₃ × cos(θ) = <span class="output-value" id="step_f3">50</span> × cos(<span class="output-value" id="step_angle2">30</span>°) = <span class="output-value" id="step_f3x">43.30</span> kN<br>
+                        F₃ᵧ = F₃ × sin(θ) = <span class="output-value" id="step_f3">50</span> × sin(<span class="output-value" id="step_angle2">30</span>°) = <span class="output-value" id="step_f3y">25.00</span> kN
+                    </p>
+                </div>
+            </div>
+
+            <div style="padding: 15px; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-left: 5px solid #10b981; border-radius: 8px; cursor: pointer;" onclick="toggleStep(this)">
+                <h3 style="margin: 0 0 10px 0; color: #064e3b; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: bold; font-size: 1.3em;">❸</span> Calculate Sum of Forces
+                </h3>
+                <div class="step-content" style="display: none;">
+                    <p><strong>Sum all horizontal and vertical forces:</strong></p>
+                    <p style="margin: 10px 0; padding: 10px; background: white; border-radius: 5px; font-family: monospace;">
+                        ∑Fₓ = F₂ - F₃ₓ = <span class="output-value" id="step_f2a">220</span> - <span class="output-value" id="step_f3x_b">43.30</span> = <span class="output-value" id="step_sumFx">176.70</span> kN (→)<br>
+                        ∑Fᵧ = F₁ + F₃ᵧ = <span class="output-value" id="step_f1a">80</span> + <span class="output-value" id="step_f3y_b">25.00</span> = <span class="output-value" id="step_sumFy">105.00</span> kN (↓)
+                    </p>
+                </div>
+            </div>
+
+            <div style="padding: 15px; background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); border-left: 5px solid #8b5cf6; border-radius: 8px; cursor: pointer;" onclick="toggleStep(this)">
+                <h3 style="margin: 0 0 10px 0; color: #4c1d95; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: bold; font-size: 1.3em;">❹</span> Calculate Resultant Force & Angle
+                </h3>
+                <div class="step-content" style="display: none;">
+                    <p><strong>Find magnitude and direction of resulting force:</strong></p>
+                    <p style="margin: 10px 0; padding: 10px; background: white; border-radius: 5px; font-family: monospace;">
+                        R = √(∑Fₓ² + ∑Fᵧ²) = √(<span class="output-value" id="step_sumFx_a">176.70</span>² + <span class="output-value" id="step_sumFy_a">105.00</span>²)<br>
+                        R = <span class="output-value" id="step_resultant">204.50</span> kN<br><br>
+                        θ = arctan(∑Fᵧ / ∑Fₓ) = arctan(<span class="output-value" id="step_sumFy_b">105.00</span> / <span class="output-value" id="step_sumFx_b">176.70</span>)<br>
+                        θ = <span class="output-value" id="step_theta">30.8</span>°
+                    </p>
+                </div>
+            </div>
+
+            <div style="padding: 15px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-left: 5px solid #ef4444; border-radius: 8px; cursor: pointer;" onclick="toggleStep(this)">
+                <h3 style="margin: 0 0 10px 0; color: #7f1d1d; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: bold; font-size: 1.3em;">❺</span> Calculate Moment About Base
+                </h3>
+                <div class="step-content" style="display: none;">
+                    <p><strong>Sum of moments about point B (base corner):</strong></p>
+                    <p style="margin: 10px 0; padding: 10px; background: white; border-radius: 5px; font-family: monospace;">
+                        ∑M_B = (F₂ × h) - (F₃ᵧ × h)<br>
+                        ∑M_B = (<span class="output-value" id="step_f2b">220</span> × <span class="output-value" id="step_h_b">5</span>) - (<span class="output-value" id="step_f3y_c">25.00</span> × <span class="output-value" id="step_h_c">5</span>)<br>
+                        ∑M_B = <span class="output-value" id="step_moment">975</span> kN·m
+                    </p>
+                </div>
+            </div>
+
+            <div style="padding: 15px; background: linear-gradient(135deg, #fef08a 0%, #fde047 100%); border-left: 5px solid #eab308; border-radius: 8px; cursor: pointer;" onclick="toggleStep(this)">
+                <h3 style="margin: 0 0 10px 0; color: #713f12; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: bold; font-size: 1.3em;">❻</span> Find Resultant Line of Action
+                </h3>
+                <div class="step-content" style="display: none;">
+                    <p><strong>Calculate where the resultant intersects the base:</strong></p>
+                    <p style="margin: 10px 0; padding: 10px; background: white; border-radius: 5px; font-family: monospace;">
+                        x-intercept = -∑M_B / ∑Fᵧ<br>
+                        x-intercept = -(<span class="output-value" id="step_moment_a">975</span>) / <span class="output-value" id="step_sumFy_c">105.00</span><br>
+                        x-intercept = <span class="output-value" id="step_xIntercept">9.286</span> m from left edge<br><br>
+                        Safe zone: <span class="output-value" id="step_safeMin">3.0</span> m to <span class="output-value" id="step_safeMax">6.0</span> m (middle third)
+                    </p>
+                </div>
+            </div>
+
+            <div style="padding: 15px; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); border-left: 5px solid #6366f1; border-radius: 8px; cursor: pointer;" onclick="toggleStep(this)">
+                <h3 style="margin: 0 0 10px 0; color: #312e81; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: bold; font-size: 1.3em;">❼</span> Check Safety Condition
+                </h3>
+                <div class="step-content" style="display: none;">
+                    <p><strong>Verify if resultant passes through middle third:</strong></p>
+                    <p style="margin: 10px 0; padding: 10px; background: white; border-radius: 5px; font-family: monospace;">
+                        Is <span class="output-value" id="step_safeMin_a">3.0</span> m ≤ <span class="output-value" id="step_xIntercept_b">9.286</span> m ≤ <span class="output-value" id="step_safeMax_a">6.0</span> m ?<br><br>
+                        <span style="font-weight: bold; color: #667eea;">Result: <span id="step_result_check">NO - OUTSIDE SAFE ZONE</span></span>
+                    </p>
+                </div>
+            </div>
+
+            <div style="padding: 15px; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 5px solid #22c55e; border-radius: 8px; cursor: pointer;" onclick="toggleStep(this)">
+                <h3 style="margin: 0 0 10px 0; color: #1b4332; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-weight: bold; font-size: 1.3em;">✓</span> Conclusion
+                </h3>
+                <div class="step-content" style="display: none;">
+                    <p id="step_conclusion_text" style="margin: 10px 0; padding: 10px; background: white; border-radius: 5px; font-size: 1.05em;">
+                        ✓ The dam design is SAFE.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section>
+        <h2>Safety Status</h2>
+        <div style="text-align: center; padding: 30px; border-radius: 10px; background: linear-gradient(135deg, #f5f9ff 0%, #e8f0f7 100%);">
+            <p style="font-size: 1.2em; margin: 10px 0;">Results: <span class="output-value" id="status" style="font-size: 1.5em;">SAFE</span></p>
+            <p style="color: #667eea; font-size: 0.95em; margin: 10px 0;" id="statusMessage">The resultant force passes through the safe zone.</p>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Engineering Analysis</p>
+    </footer>
+
+    <script>
+        let chart = null;
+
+        // Toggle step visibility
+        function toggleStep(element) {
+            const content = element.querySelector('.step-content');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                element.style.boxShadow = '0 8px 20px rgba(102, 126, 234, 0.3)';
+            } else {
+                content.style.display = 'none';
+                element.style.boxShadow = 'none';
+            }
+        }
+
+        // Calculate button click event
+        document.getElementById('calculateBtn').addEventListener('click', function() {
+            // Add button animation
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 150);
+            
+            updateCalculations();
+        });
+
+        // Add hover effect to button
+        document.getElementById('calculateBtn').addEventListener('mouseover', function() {
+            this.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
+            this.style.transform = 'translateY(-2px)';
+        });
+
+        document.getElementById('calculateBtn').addEventListener('mouseout', function() {
+            this.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
+            this.style.transform = 'translateY(0)';
+        });
+
+        // Start button - resume animations
+        document.getElementById('startBtn').addEventListener('click', function() {
+            const svg = document.getElementById('damSvg');
+            svg.classList.remove('diagram-paused');
+            this.style.opacity = '1';
+            this.style.pointerEvents = 'auto';
+            document.getElementById('stopBtn').style.opacity = '1';
+            document.getElementById('stopBtn').style.pointerEvents = 'auto';
+        });
+
+        // Stop button - pause animations
+        document.getElementById('stopBtn').addEventListener('click', function() {
+            const svg = document.getElementById('damSvg');
+            svg.classList.add('diagram-paused');
+            this.style.opacity = '0.6';
+            this.style.pointerEvents = 'none';
+        });
+
+        function updateCalculations() {
+            const f1 = parseFloat(document.getElementById('f1').value) || 0;
+            const f2 = parseFloat(document.getElementById('f2').value) || 0;
+            const f3 = parseFloat(document.getElementById('f3').value) || 0;
+            const angle = parseFloat(document.getElementById('angle').value) || 0;
+            const height = parseFloat(document.getElementById('height').value) || 5;
+            const base = parseFloat(document.getElementById('base').value) || 9;
+
+            // Calculate force components
+            const f3x = f3 * Math.cos(angle * Math.PI / 180);
+            const f3y = f3 * Math.sin(angle * Math.PI / 180);
+            const fx = f2 - f3x;
+            const fy = f1 + f3y;
+            const resultant = Math.sqrt(fx * fx + fy * fy);
+            const theta = Math.atan2(fy, fx) * 180 / Math.PI;
+
+            // Calculate moment
+            const moment = f2 * height - f3y * height;
+            const xIntercept = fy !== 0 ? moment / fy : base / 2;
+            const safeMin = base / 3;
+            const safeMax = 2 * base / 3;
+            const isSafe = xIntercept >= safeMin && xIntercept <= safeMax;
+
+            console.log('Safety Check:', {xIntercept, safeMin, safeMax, isSafe});
+
+            // Update main display values with animation
+            animateValue('sumFx', parseFloat(document.getElementById('sumFx').textContent), fx, 500);
+            animateValue('sumFy', parseFloat(document.getElementById('sumFy').textContent), fy, 500);
+            animateValue('resultant', parseFloat(document.getElementById('resultant').textContent), resultant, 500);
+            animateValue('theta', parseFloat(document.getElementById('theta').textContent), theta, 500);
+            animateValue('moment', parseFloat(document.getElementById('moment').textContent), moment, 500);
+            animateValue('xIntercept', parseFloat(document.getElementById('xIntercept').textContent), xIntercept, 500);
+            
+            // Update step-by-step values
+            updateStepValues(f1, f2, f3, angle, height, base, f3x, f3y, fx, fy, resultant, theta, moment, xIntercept, safeMin, safeMax, isSafe);
+
+            // Update safety status immediately
+            setTimeout(() => {
+                document.getElementById('status').textContent = isSafe ? '✓ SAFE' : '✗ UNSAFE';
+                document.getElementById('status').className = isSafe ? 'output-value safe' : 'output-value unsafe';
+                document.getElementById('statusMessage').innerHTML = isSafe ? 
+                    `<strong style="color: #10b981;">✓ SAFE</strong> - The resultant (${xIntercept.toFixed(2)}m) is within safe zone (${safeMin.toFixed(1)}m to ${safeMax.toFixed(1)}m)` : 
+                    `<strong style="color: #ef4444;">✗ UNSAFE</strong> - The resultant (${xIntercept.toFixed(2)}m) is outside safe zone (${safeMin.toFixed(1)}m to ${safeMax.toFixed(1)}m)`;
+            }, 100);
+
+            // Update diagram
+            updateDiagram(f1, f2, f3, angle, height, base, xIntercept, safeMin, safeMax, isSafe);
+
+            // Update chart
+            updateChart(f1, f2, f3, resultant);
+        }
+
+        function updateStepValues(f1, f2, f3, angle, height, base, f3x, f3y, fx, fy, resultant, theta, moment, xIntercept, safeMin, safeMax, isSafe) {
+            // Step 1
+            document.getElementById('step_f1').textContent = f1.toFixed(0);
+            document.getElementById('step_f2').textContent = f2.toFixed(0);
+            document.getElementById('step_f3').textContent = f3.toFixed(0);
+            document.getElementById('step_angle').textContent = angle.toFixed(0);
+            document.getElementById('step_h').textContent = height.toFixed(1);
+            document.getElementById('step_b').textContent = base.toFixed(1);
+
+            // Step 2 - F3 components
+            document.getElementById('step_f3x').textContent = f3x.toFixed(2);
+            document.getElementById('step_f3y').textContent = f3y.toFixed(2);
+            document.getElementById('step_angle2').textContent = angle.toFixed(0);
+
+            // Step 3 - Sum of forces
+            document.getElementById('step_f2a').textContent = f2.toFixed(0);
+            document.getElementById('step_f3x_b').textContent = f3x.toFixed(2);
+            document.getElementById('step_sumFx').textContent = fx.toFixed(2);
+            document.getElementById('step_f1a').textContent = f1.toFixed(0);
+            document.getElementById('step_f3y_b').textContent = f3y.toFixed(2);
+            document.getElementById('step_sumFy').textContent = fy.toFixed(2);
+
+            // Step 4 - Resultant
+            document.getElementById('step_sumFx_a').textContent = fx.toFixed(2);
+            document.getElementById('step_sumFy_a').textContent = fy.toFixed(2);
+            document.getElementById('step_resultant').textContent = resultant.toFixed(2);
+            document.getElementById('step_sumFy_b').textContent = fy.toFixed(2);
+            document.getElementById('step_sumFx_b').textContent = fx.toFixed(2);
+            document.getElementById('step_theta').textContent = theta.toFixed(1);
+
+            // Step 5 - Moment
+            document.getElementById('step_f2b').textContent = f2.toFixed(0);
+            document.getElementById('step_h_b').textContent = height.toFixed(1);
+            document.getElementById('step_f3y_c').textContent = f3y.toFixed(2);
+            document.getElementById('step_h_c').textContent = height.toFixed(1);
+            document.getElementById('step_moment').textContent = moment.toFixed(0);
+
+            // Step 6 - x-intercept
+            document.getElementById('step_moment_a').textContent = moment.toFixed(0);
+            document.getElementById('step_sumFy_c').textContent = fy.toFixed(2);
+            document.getElementById('step_xIntercept').textContent = xIntercept.toFixed(3);
+            document.getElementById('step_safeMin').textContent = safeMin.toFixed(1);
+            document.getElementById('step_safeMax').textContent = safeMax.toFixed(1);
+
+            // Step 7 - Check
+            document.getElementById('step_safeMin_a').textContent = safeMin.toFixed(1);
+            document.getElementById('step_xIntercept_b').textContent = xIntercept.toFixed(3);
+            document.getElementById('step_safeMax_a').textContent = safeMax.toFixed(1);
+            
+            const checkResult = (xIntercept >= safeMin && xIntercept <= safeMax) ? 
+                'YES - WITHIN SAFE ZONE ✓' : 'NO - OUTSIDE SAFE ZONE ✗';
+            document.getElementById('step_result_check').textContent = checkResult;
+
+            // Step 8 - Conclusion
+            const conclusionText = isSafe ? 
+                '✓ The dam design is SAFE. The resultant force passes through the middle third of the base.' :
+                '✗ The dam design is UNSAFE. The resultant force is outside the safe zone.';
+            document.getElementById('step_conclusion_text').textContent = conclusionText;
+        }
+
+        function animateValue(id, start, end, duration) {
+            const element = document.getElementById(id);
+            const range = end - start;
+            const increment = range / (duration / 16);
+            let current = start;
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                    current = end;
+                    clearInterval(timer);
+                }
+                const displayValue = Math.abs(end) > 100 ? current.toFixed(0) : current.toFixed(3);
+                element.textContent = displayValue;
+            }, 16);
+        }
+
+        function updateDiagram(f1, f2, f3, angle, height, base, xIntercept, safeMin, safeMax, isSafe) {
+            const svg = document.getElementById('damSvg');
+            svg.setAttribute('viewBox', '0 0 700 520');
+            svg.innerHTML = '';
+
+            const scale = 45;
+            const damBase = 80 + base * scale;
+            const damHeight = 350 - height * scale;
+
+            // Add SVG styles/gradients
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            
+            // Dam gradient - more realistic concrete
+            const damGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            damGradient.setAttribute('id', 'damGradient');
+            damGradient.setAttribute('x1', '0%');
+            damGradient.setAttribute('y1', '0%');
+            damGradient.setAttribute('x2', '100%');
+            damGradient.setAttribute('y2', '100%');
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', '#7d6d63');
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '50%');
+            stop2.setAttribute('stop-color', '#5d5349');
+            const stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop3.setAttribute('offset', '100%');
+            stop3.setAttribute('stop-color', '#3d332a');
+            damGradient.appendChild(stop1);
+            damGradient.appendChild(stop2);
+            damGradient.appendChild(stop3);
+            defs.appendChild(damGradient);
+
+            // Water gradient - more realistic blue water
+            const waterGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            waterGradient.setAttribute('id', 'waterGradient');
+            waterGradient.setAttribute('x1', '0%');
+            waterGradient.setAttribute('y1', '0%');
+            waterGradient.setAttribute('x2', '0%');
+            waterGradient.setAttribute('y2', '100%');
+            const wstop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            wstop1.setAttribute('offset', '0%');
+            wstop1.setAttribute('stop-color', '#2563eb');
+            wstop1.setAttribute('stop-opacity', '0.7');
+            const wstop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            wstop2.setAttribute('offset', '50%');
+            wstop2.setAttribute('stop-color', '#1e40af');
+            wstop2.setAttribute('stop-opacity', '0.8');
+            const wstop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            wstop3.setAttribute('offset', '100%');
+            wstop3.setAttribute('stop-color', '#0c2340');
+            wstop3.setAttribute('stop-opacity', '0.9');
+            waterGradient.appendChild(wstop1);
+            waterGradient.appendChild(wstop2);
+            waterGradient.appendChild(wstop3);
+            defs.appendChild(waterGradient);
+
+            svg.appendChild(defs);
+
+            // Water fill
+            const waterFill = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            waterFill.setAttribute('points', `60,350 60,480 ${damBase + 150},480 ${damBase + 150},350`);
+            waterFill.setAttribute('fill', 'url(#waterGradient)');
+            waterFill.setAttribute('opacity', '0.6');
+            waterFill.style.animation = 'waterWave 3s ease-in-out infinite';
+            svg.appendChild(waterFill);
+
+            // Add water ripples with more realistic appearance
+            for (let i = 0; i < 4; i++) {
+                const ripple = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                ripple.setAttribute('cx', 130 + (damBase - 130) / 2);
+                ripple.setAttribute('cy', '415');
+                ripple.setAttribute('r', '8');
+                ripple.setAttribute('fill', 'none');
+                ripple.setAttribute('stroke', '#60a5fa');
+                ripple.setAttribute('stroke-width', '2');
+                ripple.setAttribute('opacity', '0.6');
+                ripple.style.animation = `waterRipple 2s ease-out ${i * 0.4}s infinite`;
+                svg.appendChild(ripple);
+            }
+
+            // Add water surface pattern (realistic waves)
+            const waterSurface = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            waterSurface.setAttribute('d', 'M 60,350 Q 130,345 200,350 T 340,350 T 480,350 T 620,350 L 640,350');
+            waterSurface.setAttribute('stroke', '#1e40af');
+            waterSurface.setAttribute('stroke-width', '3');
+            waterSurface.setAttribute('fill', 'none');
+            waterSurface.setAttribute('opacity', '0.8');
+            waterSurface.style.animation = 'waterWave 4s ease-in-out infinite';
+            svg.appendChild(waterSurface);
+
+            // Add water pressure forces (horizontal arrows pushing on dam) - more intensive
+            const waterPressureStartY = damHeight + (350 - damHeight) / 2;
+            const pressureLevels = [
+                { y: waterPressureStartY - 30, intensity: 0.7 },
+                { y: waterPressureStartY - 10, intensity: 0.9 },
+                { y: waterPressureStartY + 10, intensity: 1.0 },
+                { y: waterPressureStartY + 30, intensity: 0.9 }
+            ];
+
+            pressureLevels.forEach((level, index) => {
+                const pressureGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                pressureGroup.style.animation = `waterFlow 2s ease-in-out ${index * 0.3}s infinite`;
+
+                // Pressure arrow line - more visible
+                const pressureLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                pressureLine.setAttribute('x1', '50');
+                pressureLine.setAttribute('y1', level.y);
+                pressureLine.setAttribute('x2', '80');
+                pressureLine.setAttribute('y2', level.y);
+                pressureLine.setAttribute('stroke', '#0ea5e9');
+                pressureLine.setAttribute('stroke-width', 2.5 * level.intensity);
+                pressureLine.setAttribute('stroke-linecap', 'round');
+                pressureLine.setAttribute('opacity', '0.85');
+                pressureGroup.appendChild(pressureLine);
+
+                // Arrow head - larger
+                const arrowHead = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                arrowHead.setAttribute('points', `80,${level.y} 74,${level.y - 5} 74,${level.y + 5}`);
+                arrowHead.setAttribute('fill', '#0ea5e9');
+                arrowHead.setAttribute('opacity', '0.85');
+                pressureGroup.appendChild(arrowHead);
+
+                // Add pressure value text
+                const pressureText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                pressureText.setAttribute('x', '85');
+                pressureText.setAttribute('y', level.y + 4);
+                pressureText.setAttribute('font-size', '12');
+                pressureText.setAttribute('fill', '#0ea5e9');
+                pressureText.setAttribute('font-weight', 'bold');
+                pressureText.setAttribute('opacity', '0.8');
+                pressureText.textContent = (100 * level.intensity).toFixed(0) + ' kPa';
+                pressureGroup.appendChild(pressureText);
+
+                svg.appendChild(pressureGroup);
+            });
+
+            // Water pressure label - more prominent
+            const waterPressureLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            waterPressureLabel.setAttribute('x', '8');
+            waterPressureLabel.setAttribute('y', waterPressureStartY - 50);
+            waterPressureLabel.setAttribute('font-size', '14');
+            waterPressureLabel.setAttribute('fill', '#0ea5e9');
+            waterPressureLabel.setAttribute('font-weight', 'bold');
+            waterPressureLabel.textContent = 'Water Pressure';
+            svg.appendChild(waterPressureLabel);
+
+            // Dam structure with shadow
+            const shadowPolygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            shadowPolygon.setAttribute('points', `80,350 130,${damHeight} ${damBase},${damHeight} ${damBase + 120},350`);
+            shadowPolygon.setAttribute('fill', 'url(#damGradient)');
+            shadowPolygon.setAttribute('filter', 'drop-shadow(3px 3px 8px rgba(0,0,0,0.3))');
+            svg.appendChild(shadowPolygon);
+
+            // Dam outline
+            const damOutline = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            damOutline.setAttribute('points', `80,350 130,${damHeight} ${damBase},${damHeight} ${damBase + 120},350`);
+            damOutline.setAttribute('fill', 'none');
+            damOutline.setAttribute('stroke', isSafe ? '#667eea' : '#ef4444');
+            damOutline.setAttribute('stroke-width', isSafe ? '2' : '3');
+            damOutline.setAttribute('id', 'damPolyline');
+            if (!isSafe) {
+                damOutline.style.animation = 'shake 0.1s infinite';
+            }
+            svg.appendChild(damOutline);
+
+            // Add dam crack if not safe
+            if (!isSafe) {
+                const crackPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                crackPath.setAttribute('d', `M ${100 + (damBase - 100) / 2},${damHeight} L ${100 + (damBase - 100) / 2},220 L ${100 + (damBase - 100) / 2 + 20},200`);
+                crackPath.setAttribute('stroke', '#ef4444');
+                crackPath.setAttribute('stroke-width', '3');
+                crackPath.setAttribute('fill', 'none');
+                crackPath.setAttribute('stroke-linecap', 'round');
+                crackPath.style.animation = 'damCrack 0.6s ease-in-out infinite';
+                svg.appendChild(crackPath);
+
+                // Additional cracks
+                const crack2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                crack2.setAttribute('d', `M ${100 + (damBase - 100) / 2},${damHeight} L ${100 + (damBase - 100) / 2 - 20},220 L ${100 + (damBase - 100) / 2 - 10},200`);
+                crack2.setAttribute('stroke', '#ef4444');
+                crack2.setAttribute('stroke-width', '2');
+                crack2.setAttribute('fill', 'none');
+                crack2.setAttribute('stroke-linecap', 'round');
+                crack2.style.animation = 'damCrack 0.6s ease-in-out 0.2s infinite';
+                svg.appendChild(crack2);
+            }
+
+            // Water level line
+            const waterLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            waterLine.setAttribute('x1', '60');
+            waterLine.setAttribute('y1', '350');
+            waterLine.setAttribute('x2', '640');
+            waterLine.setAttribute('y2', '350');
+            waterLine.setAttribute('stroke', '#3b82f6');
+            waterLine.setAttribute('stroke-width', '2');
+            waterLine.setAttribute('stroke-dasharray', '8,4');
+            waterLine.setAttribute('opacity', '0.7');
+            svg.appendChild(waterLine);
+
+            // Safe zone with gradient
+            const safeGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            safeGradient.setAttribute('id', 'safeGradient');
+            const sgstop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            sgstop1.setAttribute('offset', '0%');
+            sgstop1.setAttribute('stop-color', '#10b981');
+            sgstop1.setAttribute('stop-opacity', '0.4');
+            const sgstop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            sgstop2.setAttribute('offset', '100%');
+            sgstop2.setAttribute('stop-color', '#059669');
+            sgstop2.setAttribute('stop-opacity', '0.6');
+            safeGradient.appendChild(sgstop1);
+            safeGradient.appendChild(sgstop2);
+            svg.appendChild(safeGradient);
+
+            const safeRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            safeRect.setAttribute('x', 80 + safeMin * scale);
+            safeRect.setAttribute('y', '350');
+            safeRect.setAttribute('width', (safeMax - safeMin) * scale);
+            safeRect.setAttribute('height', '30');
+            safeRect.setAttribute('fill', 'url(#safeGradient)');
+            safeRect.setAttribute('rx', '3');
+            safeRect.style.animation = 'pulse 2s ease-in-out infinite';
+            svg.appendChild(safeRect);
+
+            // Add warning indicator if not safe
+            if (!isSafe) {
+                // Red border around unsafe area
+                const warningRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                warningRect.setAttribute('x', '50');
+                warningRect.setAttribute('y', '70');
+                warningRect.setAttribute('width', '650');
+                warningRect.setAttribute('height', '360');
+                warningRect.setAttribute('fill', 'none');
+                warningRect.setAttribute('stroke', '#ef4444');
+                warningRect.setAttribute('stroke-width', '3');
+                warningRect.setAttribute('stroke-dasharray', '10,5');
+                warningRect.setAttribute('rx', '5');
+                warningRect.style.animation = 'fadeInOut 1s ease-in-out infinite';
+                svg.appendChild(warningRect);
+
+                // Warning text
+                const warningText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                warningText.setAttribute('x', '375');
+                warningText.setAttribute('y', '35');
+                warningText.setAttribute('font-size', '16');
+                warningText.setAttribute('font-weight', 'bold');
+                warningText.setAttribute('fill', '#ef4444');
+                warningText.setAttribute('text-anchor', 'middle');
+                warningText.style.animation = 'fadeInOut 1s ease-in-out infinite';
+                warningText.textContent = '⚠ WARNING: DAM UNSAFE - STRUCTURE FAILING!';
+                svg.appendChild(warningText);
+            }
+
+            // Resultant force line
+            const rx = xIntercept * scale;
+            const resultantLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            resultantLine.setAttribute('x1', 80 + rx);
+            resultantLine.setAttribute('y1', damHeight);
+            resultantLine.setAttribute('x2', 80 + rx);
+            resultantLine.setAttribute('y2', '370');
+            resultantLine.setAttribute('stroke', '#667eea');
+            resultantLine.setAttribute('stroke-width', '3');
+            resultantLine.style.animation = 'slideDown 0.8s ease-out';
+            svg.appendChild(resultantLine);
+
+            // Force arrows from center
+            const centerX = 80 + base * scale / 2;
+            const centerY = damHeight + 50;
+
+            // Vertical force (red)
+            if (f1 > 0) {
+                const arrowLength = Math.min(f1 / 18, 70);
+                const group1 = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                group1.style.animation = 'bounceDown 1s ease-in-out infinite';
+                
+                const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line1.setAttribute('x1', centerX);
+                line1.setAttribute('y1', centerY);
+                line1.setAttribute('x2', centerX);
+                line1.setAttribute('y2', centerY + arrowLength);
+                line1.setAttribute('stroke', '#ef4444');
+                line1.setAttribute('stroke-width', '4');
+                line1.setAttribute('stroke-linecap', 'round');
+                group1.appendChild(line1);
+
+                const arrowHead1 = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                arrowHead1.setAttribute('points', `${centerX},${centerY + arrowLength} ${centerX - 5},${centerY + arrowLength - 8} ${centerX + 5},${centerY + arrowLength - 8}`);
+                arrowHead1.setAttribute('fill', '#ef4444');
+                group1.appendChild(arrowHead1);
+
+                const text1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text1.setAttribute('x', centerX + 30);
+                text1.setAttribute('y', centerY + arrowLength / 2);
+                text1.setAttribute('font-size', '14');
+                text1.setAttribute('font-weight', 'bold');
+                text1.setAttribute('fill', '#ef4444');
+                text1.textContent = f1.toFixed(0) + ' kN';
+                group1.appendChild(text1);
+
+                svg.appendChild(group1);
+            }
+
+            // Horizontal force (blue)
+            if (f2 > 0) {
+                const arrowLength = Math.min(f2 / 25, 70);
+                const group2 = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                group2.style.animation = 'bounceLeft 1s ease-in-out infinite';
+
+                const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line2.setAttribute('x1', centerX);
+                line2.setAttribute('y1', centerY - 50);
+                line2.setAttribute('x2', centerX - arrowLength);
+                line2.setAttribute('y2', centerY - 50);
+                line2.setAttribute('stroke', '#3b82f6');
+                line2.setAttribute('stroke-width', '4');
+                line2.setAttribute('stroke-linecap', 'round');
+                group2.appendChild(line2);
+
+                const arrowHead2 = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                arrowHead2.setAttribute('points', `${centerX - arrowLength},${centerY - 50} ${centerX - arrowLength + 8},${centerY - 50 - 5} ${centerX - arrowLength + 8},${centerY - 50 + 5}`);
+                arrowHead2.setAttribute('fill', '#3b82f6');
+                group2.appendChild(arrowHead2);
+
+                const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text2.setAttribute('x', centerX - arrowLength / 2);
+                text2.setAttribute('y', centerY - 65);
+                text2.setAttribute('font-size', '14');
+                text2.setAttribute('font-weight', 'bold');
+                text2.setAttribute('fill', '#3b82f6');
+                text2.setAttribute('text-anchor', 'middle');
+                text2.textContent = f2.toFixed(0) + ' kN';
+                group2.appendChild(text2);
+
+                svg.appendChild(group2);
+            }
+
+            // Third force arrow
+            if (f3 > 0) {
+                const angleRad = angle * Math.PI / 180;
+                const arrowLength = Math.min(f3 / 20, 60);
+                const endX = centerX + arrowLength * Math.cos(angleRad);
+                const endY = centerY - arrowLength * Math.sin(angleRad);
+
+                const group3 = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                group3.style.animation = 'rotate 2s ease-in-out infinite';
+                group3.setAttribute('transform-origin', `${centerX} ${centerY}`);
+
+                const line3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line3.setAttribute('x1', centerX);
+                line3.setAttribute('y1', centerY);
+                line3.setAttribute('x2', endX);
+                line3.setAttribute('y2', endY);
+                line3.setAttribute('stroke', '#10b981');
+                line3.setAttribute('stroke-width', '4');
+                line3.setAttribute('stroke-linecap', 'round');
+                group3.appendChild(line3);
+
+                const text3 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text3.setAttribute('x', endX + 15);
+                text3.setAttribute('y', endY);
+                text3.setAttribute('font-size', '14');
+                text3.setAttribute('font-weight', 'bold');
+                text3.setAttribute('fill', '#10b981');
+                text3.textContent = f3.toFixed(0) + ' kN @' + angle.toFixed(0) + '°';
+                group3.appendChild(text3);
+
+                svg.appendChild(group3);
+            }
+
+            // Dimension labels
+            const textBase = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            textBase.setAttribute('x', 80 + base * scale / 2);
+            textBase.setAttribute('y', '405');
+            textBase.setAttribute('font-size', '14');
+            textBase.setAttribute('font-weight', 'bold');
+            textBase.setAttribute('text-anchor', 'middle');
+            textBase.setAttribute('fill', '#667eea');
+            textBase.textContent = `Base = ${base.toFixed(1)} m`;
+            svg.appendChild(textBase);
+
+            const textHeight = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            textHeight.setAttribute('x', '15');
+            textHeight.setAttribute('y', damHeight + 40);
+            textHeight.setAttribute('font-size', '14');
+            textHeight.setAttribute('font-weight', 'bold');
+            textHeight.setAttribute('fill', '#667eea');
+            textHeight.textContent = `H=${height.toFixed(1)}m`;
+            svg.appendChild(textHeight);
+
+            // Add animations to SVG
+            const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+            style.textContent = `
+                @keyframes slideDown {
+                    from { opacity: 0; y: -20px; }
+                    to { opacity: 1; y: 0; }
+                }
+                @keyframes bounceDown {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(8px); }
+                }
+                @keyframes bounceLeft {
+                    0%, 100% { transform: translateX(0); }
+                    50% { transform: translateX(-8px); }
+                }
+                @keyframes rotate {
+                    0%, 100% { transform: rotate(0deg); }
+                    50% { transform: rotate(5deg); }
+                }
+                @keyframes pulse {
+                    0%, 100% { opacity: 0.4; }
+                    50% { opacity: 0.8; }
+                }
+                @keyframes waterWave {
+                    0%, 100% { transform: translateY(0px); }
+                    50% { transform: translateY(-8px); }
+                }
+                @keyframes waterRipple {
+                    0% { 
+                        opacity: 1;
+                        r: 5px;
+                    }
+                    100% { 
+                        opacity: 0;
+                        r: 40px;
+                    }
+                }
+                @keyframes damCrack {
+                    0%, 100% { 
+                        stroke-dashoffset: 0;
+                        filter: drop-shadow(0 0 0px rgba(239, 68, 68, 0));
+                    }
+                    50% { 
+                        stroke-dashoffset: 100;
+                        filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.8));
+                    }
+                }
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+                @keyframes waterFlow {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(20px); }
+                }
+                @keyframes fadeInOut {
+                    0%, 100% { opacity: 0.3; }
+                    50% { opacity: 0.8; }
+                }
+            `;
+            svg.appendChild(style);
+        }
+
+        function updateChart(f1, f2, f3, resultant) {
+            const ctx = document.getElementById('forceChart').getContext('2d');
+            
+            const chartConfig = {
+                type: 'bar',
+                data: {
+                    labels: ['Vertical', 'Horizontal', 'Third Force', 'Resultant'],
+                    datasets: [{
+                        label: 'Force Magnitude (kN)',
+                        data: [f1, f2, f3, resultant],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.7)',
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(168, 85, 247, 0.8)'
+                        ],
+                        borderColor: [
+                            '#ef4444',
+                            '#3b82f6',
+                            '#10b981',
+                            '#a855f7'
+                        ],
+                        borderWidth: 3,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        hoverBackgroundColor: [
+                            'rgba(239, 68, 68, 0.9)',
+                            'rgba(59, 130, 246, 0.9)',
+                            'rgba(16, 185, 129, 0.9)',
+                            'rgba(168, 85, 247, 1)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'x',
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: Math.max(resultant * 1.2, 300),
+                            grid: {
+                                color: 'rgba(102, 126, 234, 0.1)',
+                                lineWidth: 1
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#667eea',
+                                font: { size: 14, weight: 'bold' },
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(102, 126, 234, 0.9)',
+                            cornerRadius: 8,
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y.toFixed(2) + ' kN';
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 800,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            };
+
+            if (chart) {
+                chart.data.datasets[0].data = [f1, f2, f3, resultant];
+                chart.options.scales.y.max = Math.max(resultant * 1.2, 300);
+                chart.update();
+            } else {
+                chart = new Chart(ctx, chartConfig);
+            }
+        }
+
+        // Initial calculation
+        updateCalculations();
+    </script>
+</body>
+</html>
